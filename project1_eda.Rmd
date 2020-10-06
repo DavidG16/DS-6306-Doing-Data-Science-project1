@@ -1,0 +1,196 @@
+---
+title: "project 1"
+author: "David Grijalva"
+date: "10/5/2020"
+output:
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+# Load Libraries
+```{r}
+library(tm) 
+library(tidyr)
+library(plyr)
+library(dplyr)
+library(tidyverse)
+library(caret)
+library(e1071)
+library(data.table)
+
+```
+
+# Load the CSVs
+```{r}
+breweries = read.csv("/Users/dgrijalva/SMU/Classes/Term Fall 2020/Doing-Data-Science/Units/project1/Breweries.csv")
+beers = read.csv("/Users/dgrijalva/SMU/Classes/Term Fall 2020/Doing-Data-Science/Units/project1/Beers.csv")
+
+```
+
+
+# Question 1
+```{r}
+breweries_per_state = breweries %>% count(State)
+breweries_per_state %>% ggplot() + geom_bar(aes(State, n), fill="blue" ,stat = 'identity') +
+    labs(x='State', y="Number of Breweries", title='Number of Breweries per State') +
+  theme(axis.text.x = element_text(angle = 60, hjust = 1))
+```
+
+# Question 2 - Merge beer data with the breweries data 
+```{r}
+data = merge(x=breweries, y=beers, by.y ="Brewery_id" , by.x = "Brew_ID")
+nrow(data)
+head(data,6)
+tail(data,6)
+```
+The breweries and beers dataframe are merged in the Brewery_id and Brew_ID columns respectively. This merge results in a dataframe of 2410 rows. 
+
+
+
+# Questions 3 - Handle missing values
+
+First lets look at how many missing values we have per column. If the columns are continous values, let's also look at
+the distribution so we can figure out how to best handle them. 
+```{r}
+missing.values <- data %>%
+    gather(key = "key", value = "val") %>%
+    mutate(is.missing = is.na(val)) %>%
+    group_by(key, is.missing) %>%
+    summarise(num.missing = n()) %>%
+    filter(is.missing==T) %>%
+    select(-is.missing) %>%
+    arrange(desc(num.missing))
+
+
+missing.values %>% ggplot() + geom_bar(aes(x=key, y=num.missing), fill="blue",stat = 'identity') +
+   labs(x='variable', y="number of missing values", title='Number of missing values') +
+   theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+data %>% ggplot() + geom_histogram(aes(x=ABV), fill="blue") +
+   labs(x="ABV", y="Count", title="ABV Distribution")
+data %>% ggplot() + geom_histogram(aes(x=IBU), fill="blue") +
+   labs(x="IBU", y="Count", title="IBU Distribution")
+```
+
+
+
+From the graphs above we notice that the only columns with missing values are ABV and IBU. 
+From having a quick visual inspection into the distribution of each, we notice that both these are somewhat right skewed, becuase of this it will be best if we use medians instead of means to impute the data. 
+```{r}
+# Get rid of special characters in the beer styles
+data$Style = gsub("[^0-9A-Za-z' ]"," " , data$Style ,ignore.case = TRUE)
+
+#Deal with NA in IBU
+# Finds medial value per beer style
+meanIBU = matrix(nrow = 100)
+styles = list()
+for (i in 1:length(unique(data$Style)) )
+{
+  beer_style = unique(data$Style)[i]
+  ibu_mean = mean(data[grep(beer_style, data$Style, ignore.case = T),]$IBU,na.rm = T )
+  meanIBU[i] = ibu_mean
+  styles[[i]] = beer_style
+}
+
+# Create a new styles dataframe with the IBU medians per beer style
+styles_impute = data.frame(IBU=meanIBU, Style = matrix(unlist(styles), nrow=length(styles), byrow=T))
+
+# merge the beer styles median IBU dataframe with the working dataframe on style name 
+impute_data = merge(data, styles_impute, by.x="Style", by.y="Style") 
+
+# If NA in original IBU value, then use median IBU per style, else use original value 
+impute_data = impute_data %>% mutate(imputed_IBU = ifelse(is.na(IBU.x) == TRUE,IBU.y,IBU.x))
+# Impute any impute_data value with the median for the ABV and imputed_IBU columns
+impute_data= impute_data %>% mutate_at(vars(ABV,imputed_IBU),~ifelse(is.na(.x), median(.x, na.rm = TRUE), .x))
+
+# Get rid of the 5 rows without a beer style. 
+impute_data = impute_data%>% filter(!Style=="")
+
+# Drop redundant columns
+drops =  c("IBU.x","IBU.y")
+impute_data = impute_data[ , !(names(impute_data) %in% drops)]
+
+
+```
+Several steps went into the handling the missing data for ABV and IBU. 
+Each type of beer style has its unique bitterness which might vary a bit from brand to brand but not much and seeing that there is 100 beer styles and more than 1,000 missing values we felt that the best approach was not impute the missing IBU with the median IBU from all the known data. Instead we calculated the median IBU per beer style and impute each missing IBU value with the median IBU value for that style. 
+Some beers styles IBU's had all missing, for this edge case we impute the IBU with the median value from all styles. 
+We believe this way of imputing IBU's is more representative to what the real distribution of IBU's would be.
+Since there were only 62 missing values for ABV we decided to impute this with the median ABV value from all beers. 
+
+There were also 5 beers with a blank style. We decided to drop these. 
+
+
+
+
+
+
+
+# Question 4 - Compute the median alcohol content and international bitterness unit for each state. Plot a bar chart to compare.
+```{r}
+
+mean_abv_state = aggregate(impute_data[, 8], list(impute_data$State), median)
+mean_ibu_state = aggregate(impute_data[, 10], list(impute_data$State), median)
+mean_ibu_state %>% ggplot() + geom_bar(aes(Group.1, x),fill="blue", stat = 'identity') +
+    labs(x='State', y="IBU Value", title='IBU by State') +
+  theme(axis.text.x = element_text(angle = 60, hjust = 1))
+mean_abv_state %>% ggplot() + geom_bar(aes(Group.1, x), fill="blue", stat = 'identity') +
+    labs(x='State', y="ABV Value", title='ABV by State') +
+  theme(axis.text.x = element_text(angle = 60, hjust = 1))
+
+```
+
+
+
+The median ABV by state seems to have less variance than the medial IBU by state. 
+
+
+# Question 5 - Which state has the maximum alcoholic (ABV) beer? Which state has the most bitter (IBU) beer?
+```{r}
+impute_data %>% filter(ABV==max(ABV))
+impute_data %>% filter(imputed_IBU==max(imputed_IBU))
+
+```
+
+
+The state with the maximum ABV in a beer is CO.  The beer is the Lee Hill Series Vol. 5 - Belgian Style Quadrupel Ale with an ABV of 0.128. 
+The state with the maximum  IBU in a beer is OR. The beer is the Bitter Bitch Imperial IPA with an IBU of 138. 
+
+
+# Question 6 - Comment on the summary statistics and distribution of the ABV variable.
+```{r}
+summary(impute_data$ABV)
+impute_data %>% ggplot() + geom_histogram(aes(ABV), fill="blue") + 
+  labs(x='ABV Value', y="count", title='ABV Distribution') 
+impute_data %>% ggplot() + geom_boxplot(aes(ABV), fill="blue") + 
+  labs(x='ABV Value', y="count", title='ABV Boxplot') 
+```
+
+It appears that the distribution of the ABV variable is slightly right skewed.  
+The 5 number summary goes as follow:   
+Min: 0.001  
+1st. Qu: 0.05  
+Median: 0.05600  
+Mean: 0.05968  
+3rd Qu: 0.06700  
+Max: 0.12800  
+
+
+# Question 7 - Is there an apparent relationship between the bitterness of the beer and its alcoholic content? Draw a scatter plot.  Make your best judgment of a relationship and EXPLAIN your answer.
+```{r}
+impute_data %>% ggplot() + geom_point(aes(x=ABV, imputed_IBU), color="blue", position="jitter") +
+   labs(x='ABV Value', y="IBU Value", title="Relation between IBU and ABV") 
+```
+
+# Question 8 - Budweiser would also like to investigate the difference with respect to IBU and ABV between IPAs (India Pale Ales) and other types of Ale (any beer with “Ale” in its name other than IPA).  You decide to use KNN classification to investigate this relationship.  Provide statistical evidence one way or the other. You can of course assume your audience is comfortable with percentages … KNN is very easy to understand conceptually.
+```{r}
+
+```
+
+
+# Question 9 - Knock their socks off!  Find one other useful inference from the data that you feel Budweiser may be able to find value in.  You must convince them why it is important and back up your conviction with appropriate statistical evidence. 
+```{r}
+
+```
