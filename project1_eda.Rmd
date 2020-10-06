@@ -17,8 +17,10 @@ library(plyr)
 library(dplyr)
 library(tidyverse)
 library(caret)
+library(class)
 library(e1071)
 library(data.table)
+
 
 ```
 
@@ -83,7 +85,7 @@ From having a quick visual inspection into the distribution of each, we notice t
 data$Style = gsub("[^0-9A-Za-z' ]"," " , data$Style ,ignore.case = TRUE)
 
 #Deal with NA in IBU
-# Finds medial value per beer style
+# Finds the median value per beer style
 meanIBU = matrix(nrow = 100)
 styles = list()
 for (i in 1:length(unique(data$Style)) )
@@ -121,10 +123,6 @@ We believe this way of imputing IBU's is more representative to what the real di
 Since there were only 62 missing values for ABV we decided to impute this with the median ABV value from all beers. 
 
 There were also 5 beers with a blank style. We decided to drop these. 
-
-
-
-
 
 
 
@@ -182,12 +180,151 @@ Max: 0.12800
 ```{r}
 impute_data %>% ggplot() + geom_point(aes(x=ABV, imputed_IBU), color="blue", position="jitter") +
    labs(x='ABV Value', y="IBU Value", title="Relation between IBU and ABV") 
+
+cor(impute_data$ABV, impute_data$imputed_IBU, method = "spearman")
 ```
+
+
+From looking at the scatterplot above it seems that there is a positive relation between ABV and IBU variables. The higher the ABV the most likely the IBU will be.  Calculating the Spearman correlation we get a coeficient of 0.56 that indicates a medium-high correlation between the variables. This suggest some evidence that the more alcohol content in the beer the bitter it will be. 
+
 
 # Question 8 - Budweiser would also like to investigate the difference with respect to IBU and ABV between IPAs (India Pale Ales) and other types of Ale (any beer with “Ale” in its name other than IPA).  You decide to use KNN classification to investigate this relationship.  Provide statistical evidence one way or the other. You can of course assume your audience is comfortable with percentages … KNN is very easy to understand conceptually.
 ```{r}
+# Crete new ipa_ale column based on regex from the beer style column
+
+impute_data$ipa_ale = ifelse(grepl("ipa", impute_data$Style, ignore.case = T), "ipa", 
+         ifelse(grepl("ale", impute_data$Style, ignore.case = T), "ale", "Other"))
+ale_ipa = impute_data %>% filter(!ipa_ale=="Other")
+
 
 ```
+
+To asses the relation between IBU and ABV between IPA and Ales we will first need to create a column with classifies the beers between "ale", "ipa", and "other". We will then filter out the "other" variable to from the dataset. This will result in a daset containing only "ale" and "ipa" labels.  
+
+```{r}
+
+#vCHoose best K
+set.seed(12)
+splitPerc = .70
+trainIndices = sample(1:dim(ale_ipa)[1],round(splitPerc * dim(ale_ipa)[1]))
+train = ale_ipa[trainIndices,]
+test = ale_ipa[-trainIndices,]
+
+
+iterations = 50
+accs = data.frame(accuracy = numeric(iterations), k = numeric(iterations))
+
+for(i in 1:iterations)
+{
+  
+  classification = knn(train[,c(8,10)], test[,c(8,10)],train$ipa_ale,k=i)
+  cm = confusionMatrix(table(test$ipa_ale, classification ), positive="ale")
+  
+
+  accs$accuracy[i] = cm$overall[1]
+  accs$k[i] = i
+}
+
+plot(accs$k,accs$accuracy, type = "l", xlab = "k")
+axis(side=1, at=c(0:50, 5))
+box()
+
+
+
+
+```
+
+Run 50 iterations of the knn classier to choose the K with the highest accuracy classifying betweemn "ale" and "ipa". It appears that the best K its 5. We will just this K to run different train/test splits. 
+
+
+```{r}
+# Run 1000 iterations  on different train/test sets. We will compute the average accuracy, specificity and Sensitivity.
+iterations = 1000
+masterAcc = matrix(nrow = iterations)
+masterSensitivity = matrix(nrow = iterations)
+masterSpecificity = matrix(nrow = iterations)
+splitPerc = .7 #Training / Test split Percentage
+for(j in 1:iterations)
+{
+  splitPerc = .70
+  set.seed(j*49+15)
+  trainIndices = sample(1:dim(ale_ipa)[1],round(splitPerc * dim(ale_ipa)[1]))
+  train = ale_ipa[trainIndices,]
+  test = ale_ipa[-trainIndices,]
+  
+  classification = knn(train[,c(8,10)], test[,c(8,10)],train$ipa_ale,k=5)
+  cm = confusionMatrix(table(test$ipa_ale, classification ), positive="ale")
+  
+  
+  masterAcc[j] = cm$overall[1]
+  masterSpecificity[j] = cm$byClass[2]
+  masterSensitivity[j] = cm$byClass[1]
+  
+}
+
+
+MeanAcc = colMeans(masterAcc)
+MeanSpecificity = colMeans(masterSpecificity)
+MeanSensitivity = colMeans(masterSensitivity)
+
+MeanAcc
+MeanSpecificity
+MeanSensitivity
+
+```
+
+```{r}
+
+
+decisionplot <- function(model, data, class = NULL, predict_type = "class",
+  resolution = 100, showgrid = TRUE, ...) {
+
+  if(!is.null(class)) cl <- data[,class] else cl <- 1
+  data <- data[,1:2]
+  k <- length(unique(cl))
+
+  plot(data, col = as.integer(cl)+1L, pch = as.integer(cl)+1L, ...)
+
+  # make grid
+  r <- sapply(data, range, na.rm = TRUE)
+  xs <- seq(r[1,1], r[2,1], length.out = resolution)
+  ys <- seq(r[1,2], r[2,2], length.out = resolution)
+  g <- cbind(rep(xs, each=resolution), rep(ys, time = resolution))
+  colnames(g) <- colnames(r)
+  g <- as.data.frame(g)
+
+  ### guess how to get class labels from predict
+  ### (unfortunately not very consistent between models)
+  p <- predict(model, g, type = predict_type)
+  if(is.list(p)) p <- p$class
+  p <- as.factor(p)
+
+  if(showgrid) points(g, col = as.integer(p)+1L, pch = ".")
+
+  z <- matrix(as.integer(p), nrow = resolution, byrow = TRUE)
+  contour(xs, ys, z, add = TRUE, drawlabels = FALSE,
+    lwd = 2, levels = (1:(k-1))+.5)
+
+  invisible(z)
+}
+
+# plot source: https://michael.hahsler.net/SMU/EMIS7332/R/viz_classifier.html
+
+x = ale_ipa[, c(8,10,11)]
+x$ipa_ale = as.factor(x$ipa_ale)
+model =  knn3(ipa_ale ~ ., data=x, k =5)
+
+decisionplot(model, x, class = "ipa_ale", main = "kNN=5")
+```
+
+
+We run 1,000 iterations of different train/test splits with k=5 to get the average accuracy, sensitivity and specificity. 
+
+Mean Accuracy: 0.9048203  
+Mean Specificity:0.8699283  
+Mean Sensitivity: 0.9247805  
+
+Base on these results, it appears that the variables ABV and IBU are highly related with the Ale and IPA style beers. 
 
 
 # Question 9 - Knock their socks off!  Find one other useful inference from the data that you feel Budweiser may be able to find value in.  You must convince them why it is important and back up your conviction with appropriate statistical evidence. 
