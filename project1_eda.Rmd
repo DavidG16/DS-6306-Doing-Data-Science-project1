@@ -39,7 +39,32 @@ breweries_per_state %>% ggplot() + geom_bar(aes(State, n), fill="blue" ,stat = '
     labs(x='State', y="Number of Breweries", title='Number of Breweries per State') +
   theme(axis.text.x = element_text(angle = 60, hjust = 1))
 ```
+Building Heatmap of US for number of breweries in each state
+```{r}
+breweries1=breweries
 
+lookup = data.frame(abbr = state.abb, State = state.name) #makes a data frame with State name and abbreviation. 
+
+breweries1$State <-trimws(breweries1$State,which=c("both"),whitespace = "[ ]")
+
+lookup.state <-tapply(lookup$State,lookup$abbr,unique)
+Breweries.State <-data.frame(State.ID = breweries1$State, Full.State.Name = (look.state[breweries1$State]))
+
+Brew.State.Data= count(Breweries.State,Full.State.Name)
+
+colnames(Brew.State.Data)[2] = "Num.of.Breweries"
+Brew.State.Data$state.lower <- tolower(Brew.State.Data$Full.State.Name)
+
+states <- map_data("state")
+
+map.df <- merge(states,Brew.State.Data, by.x = "region",by.y ="state.lower",  all.x=T)
+map.df <- map.df[order(map.df$order),]
+ggplot(map.df, aes(x=long,y=lat,group=group))+
+  geom_polygon(aes(fill=Num.of.Breweries))+
+  geom_path()+ 
+  scale_fill_gradientn(colours=rev(heat.colors(10)),na.value="grey90")+ggtitle("Breweries by State")
+coord_map()
+```
 # Question 2 - Merge beer data with the breweries data 
 ```{r}
 data = merge(x=breweries, y=beers, by.y ="Brewery_id" , by.x = "Brew_ID")
