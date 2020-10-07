@@ -26,8 +26,8 @@ library(data.table)
 
 # Load the CSVs
 ```{r}
-breweries = read.csv("/Users/dgrijalva/SMU/Classes/Term Fall 2020/Doing-Data-Science/Units/project1/Breweries.csv")
-beers = read.csv("/Users/dgrijalva/SMU/Classes/Term Fall 2020/Doing-Data-Science/Units/project1/Beers.csv")
+breweries = read.csv("./Breweries.csv")
+beers = read.csv("./Beers.csv")
 
 ```
 
