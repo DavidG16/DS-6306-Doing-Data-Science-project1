@@ -62,7 +62,7 @@ map.df <- map.df[order(map.df$order),]
 ggplot(map.df, aes(x=long,y=lat,group=group))+
   geom_polygon(aes(fill=Num.of.Breweries))+
   geom_path()+ 
-  scale_fill_gradientn(colours=rev(heat.colors(10)),na.value="grey90")+ggtitle("Breweries by State")
+  scale_fill_gradientn(colours=rev(heat.colors(5)),na.value="grey90")+ggtitle("Breweries by State")
 coord_map()
 ```
 # Question 2 - Merge beer data with the breweries data 
