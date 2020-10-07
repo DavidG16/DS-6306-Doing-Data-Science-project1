@@ -62,7 +62,8 @@ map.df <- merge(states,Brew.State.Data, by.x = "region",by.y ="state.lower",  al
 map.df <- map.df[order(map.df$order),]
 B = ggplot(map.df, aes(x=long,y=lat,group=group))+
   geom_polygon(aes(fill=Num.of.Breweries))+
-  geom_path()+
+  geom_path() + geom_text(aes(label = Num.of.Breweries))+
+    
   scale_fill_gradientn(colours=rev(heat.colors(5)),na.value="grey90")+ggtitle("Breweries by State")+
 coord_map()
 ggplotly(B)
