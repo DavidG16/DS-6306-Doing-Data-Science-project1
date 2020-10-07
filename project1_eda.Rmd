@@ -20,6 +20,7 @@ library(caret)
 library(class)
 library(e1071)
 library(data.table)
+library(plotly)
 
 
 ```
@@ -59,11 +60,12 @@ states <- map_data("state")
 
 map.df <- merge(states,Brew.State.Data, by.x = "region",by.y ="state.lower",  all.x=T)
 map.df <- map.df[order(map.df$order),]
-ggplot(map.df, aes(x=long,y=lat,group=group))+
+B = ggplot(map.df, aes(x=long,y=lat,group=group))+
   geom_polygon(aes(fill=Num.of.Breweries))+
-  geom_path()+ 
-  scale_fill_gradientn(colours=rev(heat.colors(5)),na.value="grey90")+ggtitle("Breweries by State")
+  geom_path()+
+  scale_fill_gradientn(colours=rev(heat.colors(5)),na.value="grey90")+ggtitle("Breweries by State")+
 coord_map()
+ggplotly(B)
 ```
 # Question 2 - Merge beer data with the breweries data 
 ```{r}
