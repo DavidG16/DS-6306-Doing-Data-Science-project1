@@ -20,6 +20,8 @@ library(caret)
 library(class)
 library(e1071)
 library(data.table)
+library(gganimate)
+library(GGally)
 
 
 ```
@@ -35,9 +37,9 @@ beers = read.csv("./Beers.csv")
 # Question 1
 ```{r}
 breweries_per_state = breweries %>% count(State)
-breweries_per_state %>% ggplot() + geom_bar(aes(State, n), fill="blue" ,stat = 'identity') +
-    labs(x='State', y="Number of Breweries", title='Number of Breweries per State') +
-  theme(axis.text.x = element_text(angle = 60, hjust = 1))
+breweries_per_state %>% ggplot() + geom_bar(aes(State, n), fill="steelblue" ,stat = 'identity') +
+    labs(x='', y="Number of Breweries", title='Number of Breweries per State') +theme_economist()+
+  theme(axis.text.x = element_text(angle = 60, hjust = 1,size = 6))
 ```
 
 ```{r}
@@ -59,7 +61,7 @@ colnames(map.df)[8] = "Num.of.Breweries"
 ggplot(map.df, aes(x=long,y=lat,group=group))+
   geom_polygon(aes(fill=Num.of.Breweries))+
   geom_path()+ 
-  scale_fill_gradientn(colours=rev(heat.colors(5)), na.value="grey90") + ggtitle("Breweries by State")
+  scale_fill_gradientn(colours=rev(heat.colors(5)), na.value="grey90") + ggtitle("Breweries by State")+theme_map()
 ```
 This heatmap helps to easily identify which states are the ones with the most breweries. 
 The two states with the most breweries are California and Colorado, with 39 and 47 breweries respectively. 
@@ -68,6 +70,7 @@ The two states with the most breweries are California and Colorado, with 39 and 
 # Question 2 - Merge beer data with the breweries data 
 ```{r}
 data = merge(x=breweries, y=beers, by.y ="Brewery_id" , by.x = "Brew_ID")
+data = data%>%rename(Beer.Name=Name.y, Brewery = Name.x)
 nrow(data)
 head(data,6)
 tail(data,6)
@@ -91,13 +94,13 @@ missing.values <- data %>%
     arrange(desc(num.missing))
 
 
-missing.values %>% ggplot() + geom_bar(aes(x=key, y=num.missing), fill="blue",stat = 'identity') +
-   labs(x='variable', y="number of missing values", title='Number of missing values') +
+missing.values %>% ggplot() + geom_bar(aes(x=key, y=num.missing), fill="steelblue",stat = 'identity') +
+   labs(x='Variable', y="Number of missing values", title='Number of missing values') +theme_economist()+
    theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
-data %>% ggplot() + geom_histogram(aes(x=ABV), fill="blue") +
+data %>% ggplot() + geom_histogram(aes(x=ABV), fill="steelblue") +theme_economist()+
    labs(x="ABV", y="Count", title="ABV Distribution")
-data %>% ggplot() + geom_histogram(aes(x=IBU), fill="blue") +
+data %>% ggplot() + geom_histogram(aes(x=IBU), fill="steelblue") +theme_economist()+
    labs(x="IBU", y="Count", title="IBU Distribution")
 ```
 
@@ -156,12 +159,12 @@ There were also 5 beers with a blank style. We decided to drop these.
 
 mean_abv_state = aggregate(impute_data[, 8], list(impute_data$State), median)
 mean_ibu_state = aggregate(impute_data[, 10], list(impute_data$State), median)
-mean_ibu_state %>% ggplot() + geom_bar(aes(Group.1, x),fill="blue", stat = 'identity') +
-    labs(x='State', y="IBU Value", title='IBU by State') +
-  theme(axis.text.x = element_text(angle = 60, hjust = 1))
-mean_abv_state %>% ggplot() + geom_bar(aes(Group.1, x), fill="blue", stat = 'identity') +
-    labs(x='State', y="ABV Value", title='ABV by State') +
-  theme(axis.text.x = element_text(angle = 60, hjust = 1))
+mean_ibu_state %>% ggplot() + geom_bar(aes(Group.1, x),fill="steelblue", stat = 'identity') +
+    labs(x='', y="IBU Value", title='IBU by State') + theme_economist()+
+  theme(axis.text.x = element_text(angle = 60, hjust = 1, size=6))
+mean_abv_state %>% ggplot() + geom_bar(aes(Group.1, x), fill="steelblue", stat = 'identity') +
+    labs(x='', y="ABV Value", title='ABV by State') + theme_economist()+ 
+  theme(axis.text.x = element_text(angle = 60, hjust = 1, size = 6 ))
 
 ```
 
@@ -185,10 +188,10 @@ The state with the maximum  IBU in a beer is OR. The beer is the Bitter Bitch Im
 # Question 6 - Comment on the summary statistics and distribution of the ABV variable.
 ```{r}
 summary(impute_data$ABV)
-impute_data %>% ggplot() + geom_histogram(aes(ABV), fill="blue") + 
-  labs(x='ABV Value', y="count", title='ABV Distribution') 
-impute_data %>% ggplot() + geom_boxplot(aes(ABV), fill="blue") + 
-  labs(x='ABV Value', y="count", title='ABV Boxplot') 
+impute_data %>% ggplot() + geom_histogram(aes(ABV), fill="steelblue") +
+  labs(x='ABV Value', y="count", title='ABV Distribution') + theme_fivethirtyeight()
+impute_data %>% ggplot() + geom_boxplot(aes(ABV), fill="steelblue") + theme_economist()+
+  labs(x='ABV Value', title='ABV Boxplot')
 ```
 
 It appears that the distribution of the ABV variable is slightly right skewed.  
@@ -203,10 +206,9 @@ Max: 0.12800
 
 # Question 7 - Is there an apparent relationship between the bitterness of the beer and its alcoholic content? Draw a scatter plot.  Make your best judgment of a relationship and EXPLAIN your answer.
 ```{r}
-impute_data %>% ggplot() + geom_point(aes(x=ABV, imputed_IBU), color="blue", position="jitter") +
-   labs(x='ABV Value', y="IBU Value", title="Relation between IBU and ABV") 
+impute_data %>% ggplot() + geom_point(aes(x=ABV, y=imputed_IBU), color="steelblue", size = 1.5) + geom_smooth(aes(x=ABV, y=imputed_IBU),method = "lm")+ labs(x='ABV Value', y="IBU Value", title="Relation between IBU and ABV") + theme_economist() + annotate("text",x=0.12, y=135, label="Correlation:0.56", color="darkred", size=4)
 
-cor(impute_data$ABV, impute_data$imputed_IBU, method = "spearman")
+c=cor(impute_data$ABV, impute_data$imputed_IBU, method = "spearman")
 ```
 
 
@@ -253,8 +255,6 @@ for(i in 1:iterations)
 plot(accs$k,accs$accuracy, type = "l", xlab = "k")
 axis(side=1, at=c(0:50, 5))
 box()
-
-
 
 
 ```
