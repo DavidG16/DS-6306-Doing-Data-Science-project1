@@ -37,9 +37,8 @@ beers = read.csv("./Beers.csv")
 # Question 1
 ```{r}
 breweries_per_state = breweries %>% count(State)
-breweries_per_state %>% ggplot() + geom_bar(aes(State, n), fill="steelblue" ,stat = 'identity') +
-    labs(x='', y="Number of Breweries", title='Number of Breweries per State') +theme_economist()+
-  theme(axis.text.x = element_text(angle = 60, hjust = 1,size = 6))
+breweries_per_state %>% ggplot() + geom_bar(aes(State, n), fill="steelblue" ,stat = 'identity')+ geom_text(stat = "count", aes(State, label = n, vjust=-0.1),size = 2.5, color = "darkred")+ labs(x='', y="Number of Breweries", title='Number of Breweries per State') +theme_economist()+ theme(axis.text.x = element_text(angle = 60, hjust = 1,size = 6))
+
 ```
 
 ```{r}
@@ -94,9 +93,9 @@ missing.values <- data %>%
     arrange(desc(num.missing))
 
 
-missing.values %>% ggplot() + geom_bar(aes(x=key, y=num.missing), fill="steelblue",stat = 'identity') +
-   labs(x='Variable', y="Number of missing values", title='Number of missing values') +theme_economist()+
-   theme(axis.text.x = element_text(angle = 45, hjust = 1))
+missing.values %>% ggplot() + geom_bar(aes(x=key, y=num.missing), fill="steelblue",stat = 'identity') + geom_text(stat = "count", aes(key, label = num.missing, vjust=-0.2),size = 4, color = "white")+
+   labs(x='', y="Number of missing values", title='Number of missing values') +theme_economist()+
+   theme(axis.text.x = element_text(angle = 0, hjust = 1))
 
 data %>% ggplot() + geom_histogram(aes(x=ABV), fill="steelblue") +theme_economist()+
    labs(x="ABV", y="Count", title="ABV Distribution")
@@ -189,7 +188,7 @@ The state with the maximum  IBU in a beer is OR. The beer is the Bitter Bitch Im
 ```{r}
 summary(impute_data$ABV)
 impute_data %>% ggplot() + geom_histogram(aes(ABV), fill="steelblue") +
-  labs(x='ABV Value', y="count", title='ABV Distribution') + theme_fivethirtyeight()
+  labs(x='ABV Value', y="count", title='ABV Distribution') + theme_economist()
 impute_data %>% ggplot() + geom_boxplot(aes(ABV), fill="steelblue") + theme_economist()+
   labs(x='ABV Value', title='ABV Boxplot')
 ```
@@ -206,9 +205,12 @@ Max: 0.12800
 
 # Question 7 - Is there an apparent relationship between the bitterness of the beer and its alcoholic content? Draw a scatter plot.  Make your best judgment of a relationship and EXPLAIN your answer.
 ```{r}
-impute_data %>% ggplot() + geom_point(aes(x=ABV, y=imputed_IBU), color="steelblue", size = 1.5) + geom_smooth(aes(x=ABV, y=imputed_IBU),method = "lm")+ labs(x='ABV Value', y="IBU Value", title="Relation between IBU and ABV") + theme_economist() + annotate("text",x=0.12, y=135, label="Correlation:0.56", color="darkred", size=4)
+impute_data %>% ggplot() + geom_point(aes(x=ABV, y=imputed_IBU), color="steelblue", size = 1.5) + geom_smooth(aes(x=ABV, y=imputed_IBU),method = "lm")+ labs(x='ABV Value', y="IBU Value", title="Relation between IBU and ABV") + theme_economist() + annotate("text",x=0.12, y=135, label="R-Square: 33.67%", color="darkred", size=4)
 
-c=cor(impute_data$ABV, impute_data$imputed_IBU, method = "spearman")
+cor(impute_data$ABV, impute_data$imputed_IBU, method = "pearson")
+
+lm1<-lm(ABV~imputed_IBU, data = impute_data)
+summary(lm1)
 ```
 
 
