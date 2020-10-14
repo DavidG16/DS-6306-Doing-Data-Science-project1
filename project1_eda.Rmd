@@ -11,7 +11,6 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 # Load Libraries
 ```{r}
-#install.packages("ggthemes")
 library(tm) 
 library(tidyr)
 library(plyr)
@@ -345,7 +344,12 @@ model =  knn3(ipa_ale ~ ., data=x, k =5)
 
 decisionplot(model, x, class = "ipa_ale", main = "kNN=5")
 ```
+```{r}
 
+
+impute_data
+
+```
 
 We run 1,000 iterations of different train/test splits with k=5 to get the average accuracy, sensitivity and specificity. 
 
@@ -358,5 +362,48 @@ Base on these results, it appears that the variables ABV and IBU are highly rela
 
 # Question 9 - Knock their socks off!  Find one other useful inference from the data that you feel Budweiser may be able to find value in.  You must convince them why it is important and back up your conviction with appropriate statistical evidence. 
 ```{r}
+#
+library(wordcloud)
+#install.packages("RColorBrewer")
+library(RColorBrewer)
+#install.packages("wordcloud2")
+library(wordcloud2)
+#install.packages("tm")
+library(tm)
+text = as.vector(impute_data['Style'])
+docs = Corpus(VectorSource(text))
+docs = docs %>%
+  tm_map(removeNumbers) %>%
+  tm_map(removePunctuation) %>%
+  tm_map(stripWhitespace)
+docs = tm_map(docs, content_transformer(tolower))
+docs = tm_map(docs, removeWords, stopwords("english"))
+tdm = TermDocumentMatrix(docs) 
+matrix = as.matrix(tdm) 
+words = sort(rowSums(matrix),decreasing=TRUE) 
+df_style = data.frame(word = names(words),freq=words)
+
+
+text = as.vector(impute_data$Beer.Name)
+docs = Corpus(VectorSource(text))
+docs = docs %>%
+  tm_map(removeNumbers) %>%
+  tm_map(removePunctuation) %>%
+  tm_map(stripWhitespace)
+docs = tm_map(docs, content_transformer(tolower))
+docs = tm_map(docs, removeWords, stopwords("english"))
+tdm = TermDocumentMatrix(docs) 
+matrix = as.matrix(tdm) 
+words = sort(rowSums(matrix),decreasing=TRUE) 
+df_name = data.frame(word = names(words),freq=words)
+
+```
+
+```{r}
+wordcloud(words = df_style$word, freq = df_style$freq, min.freq = 1,max.words=100, random.order=FALSE, rot.per=0.35,colors=brewer.pal(8, "Dark2"))
+
+
+set.seed(1234) # for reproducibility 
+wordcloud(words = df_name$word, freq = df_name$freq, min.freq = 1,max.words=100, random.order=FALSE, rot.per=0.35,colors=brewer.pal(6, "Dark2"))
 
 ```
