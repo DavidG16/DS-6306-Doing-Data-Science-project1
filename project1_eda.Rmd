@@ -11,6 +11,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 # Load Libraries
 ```{r}
+#install.packages("ggthemes")
 library(tm) 
 library(tidyr)
 library(plyr)
@@ -22,6 +23,7 @@ library(e1071)
 library(data.table)
 library(gganimate)
 library(GGally)
+require(ggthemes)
 
 
 ```
