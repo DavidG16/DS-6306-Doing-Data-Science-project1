@@ -315,8 +315,8 @@ fit = knn(train[,c(8,10)], test[,c(8,10)],train$ipa_ale,k=5)
 
 # Create a dataframe to simplify charting
 plot.df = data.frame(test, predicted = fit)
-
-
+plot.df$ipa_ale = as.factor(plot.df$ipa_ale)
+plot.df
 
 # First use Convex hull to determine boundary points of each cluster
 plot.df1 = data.frame(x = plot.df$imputed_IBU, 
@@ -327,8 +327,7 @@ find_hull = function(df) df[chull(df$x, df$y), ]
 boundary = ddply(plot.df1, .variables = "predicted", .fun = find_hull)
 
 ggplot(plot.df, aes(imputed_IBU, ABV, color = predicted, fill = predicted)) + 
-  geom_point(size = 2) + 
-  geom_polygon(data = boundary, aes(x,y), alpha = 0.5) + ggtitle("KNN Clusters Boundery") + theme_economist()
+  geom_point(size = 2) +   geom_polygon(data = boundary, aes(x,y), alpha = 0.5) + ggtitle("KNN Clusters Prediction Boundery") + theme_economist()
 
 # plot source: https://stackoverflow.com/questions/35402850/how-to-plot-knn-clusters-boundaries-in-r
 ```
