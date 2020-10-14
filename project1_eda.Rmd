@@ -300,55 +300,37 @@ MeanSpecificity
 MeanSensitivity
 
 ```
-
 ```{r}
 
+splitPerc = .70
+set.seed(j*49+15)
+trainIndices = sample(1:dim(ale_ipa)[1],round(splitPerc * dim(ale_ipa)[1]))
+train = ale_ipa[trainIndices,]
+test = ale_ipa[-trainIndices,]
+  
+  
 
-decisionplot <- function(model, data, class = NULL, predict_type = "class",
-  resolution = 100, showgrid = TRUE, ...) {
+# Do knn
+fit = knn(train[,c(8,10)], test[,c(8,10)],train$ipa_ale,k=5)
 
-  if(!is.null(class)) cl <- data[,class] else cl <- 1
-  data <- data[,1:2]
-  k <- length(unique(cl))
-
-  plot(data, col = as.integer(cl)+1L, pch = as.integer(cl)+1L, ...)
-
-  # make grid
-  r <- sapply(data, range, na.rm = TRUE)
-  xs <- seq(r[1,1], r[2,1], length.out = resolution)
-  ys <- seq(r[1,2], r[2,2], length.out = resolution)
-  g <- cbind(rep(xs, each=resolution), rep(ys, time = resolution))
-  colnames(g) <- colnames(r)
-  g <- as.data.frame(g)
-
-  ### guess how to get class labels from predict
-  ### (unfortunately not very consistent between models)
-  p <- predict(model, g, type = predict_type)
-  if(is.list(p)) p <- p$class
-  p <- as.factor(p)
-
-  if(showgrid) points(g, col = as.integer(p)+1L, pch = ".")
-
-  z <- matrix(as.integer(p), nrow = resolution, byrow = TRUE)
-  contour(xs, ys, z, add = TRUE, drawlabels = FALSE,
-    lwd = 2, levels = (1:(k-1))+.5)
-
-  invisible(z)
-}
-
-# plot source: https://michael.hahsler.net/SMU/EMIS7332/R/viz_classifier.html
-
-x = ale_ipa[, c(8,10,11)]
-x$ipa_ale = as.factor(x$ipa_ale)
-model =  knn3(ipa_ale ~ ., data=x, k =5)
-
-decisionplot(model, x, class = "ipa_ale", main = "kNN=5")
-```
-```{r}
+# Create a dataframe to simplify charting
+plot.df = data.frame(test, predicted = fit)
 
 
-impute_data
 
+# First use Convex hull to determine boundary points of each cluster
+plot.df1 = data.frame(x = plot.df$imputed_IBU, 
+                      y = plot.df$ABV, 
+                      predicted = plot.df$predicted)
+
+find_hull = function(df) df[chull(df$x, df$y), ]
+boundary = ddply(plot.df1, .variables = "predicted", .fun = find_hull)
+
+ggplot(plot.df, aes(imputed_IBU, ABV, color = predicted, fill = predicted)) + 
+  geom_point(size = 2) + 
+  geom_polygon(data = boundary, aes(x,y), alpha = 0.5) + ggtitle("KNN Clusters Boundery") + theme_economist()
+
+# plot source: https://stackoverflow.com/questions/35402850/how-to-plot-knn-clusters-boundaries-in-r
 ```
 
 We run 1,000 iterations of different train/test splits with k=5 to get the average accuracy, sensitivity and specificity. 
