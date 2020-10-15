@@ -157,12 +157,12 @@ There were also 5 beers with a blank style. We decided to drop these.
 # Question 4 - Compute the median alcohol content and international bitterness unit for each state. Plot a bar chart to compare.
 ```{r}
 
-mean_abv_state = aggregate(impute_data[, 8], list(impute_data$State), median)
-mean_ibu_state = aggregate(impute_data[, 10], list(impute_data$State), median)
-mean_ibu_state %>% ggplot() + geom_bar(aes(Group.1, x),fill="steelblue", stat = 'identity') +
+median_abv_state = aggregate(impute_data[, 8], list(impute_data$State), median)
+median_ibu_state = aggregate(impute_data[, 10], list(impute_data$State), median)
+median_ibu_state %>% ggplot() + geom_bar(aes(Group.1, x),fill="steelblue", stat = 'identity') +
     labs(x='', y="IBU Value", title='IBU by State') + theme_economist()+
   theme(axis.text.x = element_text(angle = 60, hjust = 1, size=6))
-mean_abv_state %>% ggplot() + geom_bar(aes(Group.1, x), fill="steelblue", stat = 'identity') +
+median_abv_state %>% ggplot() + geom_bar(aes(Group.1, x), fill="steelblue", stat = 'identity') +
     labs(x='', y="ABV Value", title='ABV by State') + theme_economist()+ 
   theme(axis.text.x = element_text(angle = 60, hjust = 1, size = 6 ))
 
@@ -224,6 +224,7 @@ From looking at the scatterplot above it seems that there is a positive relation
 
 impute_data$ipa_ale = ifelse(grepl("ipa", impute_data$Style, ignore.case = T), "ipa", 
          ifelse(grepl("ale", impute_data$Style, ignore.case = T), "ale", "Other"))
+# Filter out other type
 ale_ipa = impute_data %>% filter(!ipa_ale=="Other")
 
 
@@ -382,9 +383,44 @@ df_name = data.frame(word = names(words),freq=words)
 
 ```{r}
 wordcloud(words = df_style$word, freq = df_style$freq, min.freq = 1,max.words=100, random.order=FALSE, rot.per=0.35,colors=brewer.pal(8, "Dark2"))
+```
 
-
+```{r}
 set.seed(1234) # for reproducibility 
 wordcloud(words = df_name$word, freq = df_name$freq, min.freq = 1,max.words=100, random.order=FALSE, rot.per=0.35,colors=brewer.pal(6, "Dark2"))
+```
+
+```{r}
+ale_ipa
+ale_ipa$ipa_ale = as.factor(ale_ipa$ipa_ale)
+t.test(ale_ipa$imputed_IBU ~ale_ipa$ipa_ale)
+t.test(ale_ipa$ABV ~ale_ipa$ipa_ale)
+
+```
+
+```{r}
+
+ale = impute_data %>% filter(ipa_ale=="ale")
+ipa = impute_data %>% filter(ipa_ale=="ipa")
+#ale
+
+# Step 1 -  group by state 
+ipa_state =ipa %>% count(State)
+ale_state =ale %>% count(State)
+ale_state  = ale_state %>% rename(ALE = n)
+ipa_state  = ipa_state %>% rename(IPA = n)
+beers_state = merge(ale_state, ipa_state, by="State")
+beers_state
+beers_state_top_5= beers_state %>% filter(State == " CA" | State== " TX" | State== " FL" | State== " NY" | State== " PA")
+beers_state_top_5
+# Step 2-  Find # of beers that are ale or ipa per state
+beers_state_tall = beers_state_top_5 %>% gather(key= Beers, value=Value, ALE:IPA)
+beers_state_tall %>% ggplot(aes(State, Value, fill=Beers), ) + geom_col(position="dodge") + theme_economist() + ggtitle("Beer Type for The Top 5 States (Consupmtion)")
+
+# Step 3 - Find the states that have the lowest number of ales 
+
+# Step 4 - Find states that have have enough breweries and not enough ale beers, make recommendation of  
+# to launch a ale style beer in this state
+# We choose Texas, its number 2 in consumption and population is growing 
 
 ```
