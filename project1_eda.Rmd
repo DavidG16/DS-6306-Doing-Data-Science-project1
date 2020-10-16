@@ -390,9 +390,8 @@ From the above plots its evident that ABV and IBU are correlated and varies sign
 
 Since, we know that IPAs and ALEs are clearly different and have different properties. We took our analysis to the next step. We checked the most popular words among the Beer Styles and among Beer Names.
 ```{r}
-
 # Question 9 - Knock their socks off!  Find one other useful inference from the data that you feel Budweiser may be able to find value in.  You must convince them why it is important and back up your conviction with appropriate statistical evidence. 
-#
+
 library(wordcloud)
 install.packages("RColorBrewer")
 library(RColorBrewer)
