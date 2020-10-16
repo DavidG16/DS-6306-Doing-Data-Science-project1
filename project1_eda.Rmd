@@ -1,6 +1,6 @@
 ---
-title: "project 1"
-author: "David Grijalva"
+title: "Beer and Breweries Case Study"
+author: "David Grijalva and Apurv Mittal"
 date: "10/5/2020"
 output:
   html_document: default
@@ -27,37 +27,56 @@ require(ggthemes)
 
 ```
 
-# Load the CSVs
+Introduction
+
+We have evaluated the data of the Breweries across USA and various different popular Beers with their Alcohol content (ABV) and Bitterness level (IBU). We did a thorough analysis of the data provided and came up with some interesting facts. We also have some recommendations following our data analysis provided towards the end of the presentation. 
+
+
 ```{r}
+# Load the CSVs
 breweries = read.csv("./Breweries.csv")
 beers = read.csv("./Beers.csv")
 
 ```
 
+We analyzed the number of breweries across US. The distribution of breweries varies significantly across the country. Colorado and California are the states with most Breweries. While Delaware and West Virginia are among the states with lowest number of breweries.
 
-# Question 1
+Below Bar chart and Heat-map gives a good pictorial representation of the data.
+
 ```{r}
+# Question 1
+# Filter and plot the number of breweries in each state.
 breweries_per_state = breweries %>% count(State)
 breweries_per_state %>% ggplot() + geom_bar(aes(State, n), fill="steelblue" ,stat = 'identity')+ geom_text(stat = "count", aes(State, label = n, vjust=-0.1),size = 2.5, color = "darkred")+ labs(x='', y="Number of Breweries", title='Number of Breweries per State') +theme_economist()+ theme(axis.text.x = element_text(angle = 60, hjust = 1,size = 6))
 
 ```
 
+Below is the Heatmap with same data with different visualization.
 ```{r}
 # Building Heatmap of US for number of breweries in each state
 breweries_per_state_1 = breweries_per_state
+
+# Remove any whitespaces present in the dataset
 breweries_per_state_1$State = trimws(breweries_per_state_1$State,which=c("both"),whitespace = "[ ]")
 
+# Setup dataframe for State name lookup
 lookup = data.frame(abbr = state.abb, State = state.name)
 
+# Merge the dataset
 breweries_per_state_1 = merge(breweries_per_state_1, lookup, by.x="State", by.y="abbr")
+
+# Change the state names to lowercase
 breweries_per_state_1$StateLower = tolower(breweries_per_state_1$State.y)
 
 states = map_data("state")
 
 map.df = merge(states,breweries_per_state_1, by.x = "region", by.y ="StateLower",  all.x=T)
 map.df = map.df[order(map.df$order),]
+
+# Rename the column Name
 colnames(map.df)[8] = "Num.of.Breweries"
 
+# Plot the breweries data on US political map
 ggplot(map.df, aes(x=long,y=lat,group=group))+
   geom_polygon(aes(fill=Num.of.Breweries))+
   geom_path()+ 
@@ -67,23 +86,20 @@ This heatmap helps to easily identify which states are the ones with the most br
 The two states with the most breweries are California and Colorado, with 39 and 47 breweries respectively. 
 
 
-# Question 2 - Merge beer data with the breweries data 
+Now, we will merge the two datasets. Snippet of merged data is provided below. This merge results in a dataframe of 2410 rows.
 ```{r}
+# Question 2 - Merge beer data with the breweries data 
 data = merge(x=breweries, y=beers, by.y ="Brewery_id" , by.x = "Brew_ID")
+# Rename the variables
 data = data%>%rename(Beer.Name=Name.y, Brewery = Name.x)
 nrow(data)
 head(data,6)
 tail(data,6)
 ```
-The breweries and beers dataframe are merged in the Brewery_id and Brew_ID columns respectively. This merge results in a dataframe of 2410 rows. 
-
-
-
-# Questions 3 - Handle missing values
-
-First lets look at how many missing values we have per column. If the columns are continous values, let's also look at
-the distribution so we can figure out how to best handle them. 
+ 
+With the merged data, we first needs to check-out if there are any missing values. After data evaluation, we identified that there are only two vaiables with missing data. ABV is missing 62 values while IBU is missing 1005 rows.Since its a large number of missing values we need to identify a way to impute the missing values.  
 ```{r}
+# Questions 3 - Handle missing values
 missing.values <- data %>%
     gather(key = "key", value = "val") %>%
     mutate(is.missing = is.na(val)) %>%
@@ -93,21 +109,32 @@ missing.values <- data %>%
     select(-is.missing) %>%
     arrange(desc(num.missing))
 
-
+# Plot the missing values to identify the variables with missing data.
 missing.values %>% ggplot() + geom_bar(aes(x=key, y=num.missing), fill="steelblue",stat = 'identity') + geom_text(stat = "count", aes(key, label = num.missing, vjust=-0.2),size = 4, color = "white")+
    labs(x='', y="Number of missing values", title='Number of missing values') +theme_economist()+
    theme(axis.text.x = element_text(angle = 0, hjust = 1))
 
-data %>% ggplot() + geom_histogram(aes(x=ABV), fill="steelblue") +theme_economist()+
-   labs(x="ABV", y="Count", title="ABV Distribution")
-data %>% ggplot() + geom_histogram(aes(x=IBU), fill="steelblue") +theme_economist()+
-   labs(x="IBU", y="Count", title="IBU Distribution")
 ```
 
+Next we plot IBU and ABV distribution. 
+```{r}
+# Questions 3 - Handle missing values
+
+# Plot ABV distribution
+data %>% ggplot() + geom_histogram(aes(x=ABV), fill="steelblue") +theme_economist()+
+   labs(x="ABV", y="Count", title="ABV Distribution")
+
+# Plot IBU distribution
+data %>% ggplot() + geom_histogram(aes(x=IBU), fill="steelblue") +theme_economist()+
+   labs(x="IBU", y="Count", title="IBU Distribution")
 
 
-From the graphs above we notice that the only columns with missing values are ABV and IBU. 
-From having a quick visual inspection into the distribution of each, we notice that both these are somewhat right skewed, becuase of this it will be best if we use medians instead of means to impute the data. 
+```
+
+Quick visual inspection into the distribution of each variable, we notice that IBU is highly right skewed while ABV is slightly skewed.
+
+Each type of beer style has its unique bitterness which might vary a bit from brand to brand but will still be in same ballpark for the beer style. There are 100 beer styles and more than 1,000 missing values we felt that the best approach was not to impute the missing IBU with the median IBU from all the known data for IBU, instead we decided to impute the missing values with medians for ABV, while for IBU we calculated the median for each beer style and imputed missing data with the median IBU value for that style. 
+
 ```{r}
 # Get rid of special characters in the beer styles
 data$Style = gsub("[^0-9A-Za-z' ]"," " , data$Style ,ignore.case = TRUE)
@@ -144,69 +171,88 @@ impute_data = impute_data[ , !(names(impute_data) %in% drops)]
 
 
 ```
-Several steps went into the handling the missing data for ABV and IBU. 
-Each type of beer style has its unique bitterness which might vary a bit from brand to brand but not much and seeing that there is 100 beer styles and more than 1,000 missing values we felt that the best approach was not impute the missing IBU with the median IBU from all the known data. Instead we calculated the median IBU per beer style and impute each missing IBU value with the median IBU value for that style. 
-Some beers styles IBU's had all missing, for this edge case we impute the IBU with the median value from all styles. 
-We believe this way of imputing IBU's is more representative to what the real distribution of IBU's would be.
-Since there were only 62 missing values for ABV we decided to impute this with the median ABV value from all beers. 
 
-There were also 5 beers with a blank style. We decided to drop these. 
+There were also 5 beers with a missing style. We decided to drop those records. 
 
 
+Next, we computed the median Alcohol content (ABV) and median Bitterness (IBU) fir each state.
 
-# Question 4 - Compute the median alcohol content and international bitterness unit for each state. Plot a bar chart to compare.
+Median IBU by state
 ```{r}
+# Question 4 - Compute the median alcohol content and international bitterness unit for each state. Plot a bar chart to compare.
 
-median_abv_state = aggregate(impute_data[, 8], list(impute_data$State), median)
+# Calculate Median IBU
+
 median_ibu_state = aggregate(impute_data[, 10], list(impute_data$State), median)
+
+# Plot median IBU by state
 median_ibu_state %>% ggplot() + geom_bar(aes(Group.1, x),fill="steelblue", stat = 'identity') +
     labs(x='', y="IBU Value", title='IBU by State') + theme_economist()+
   theme(axis.text.x = element_text(angle = 60, hjust = 1, size=6))
+
+
+```
+Median ABV by State
+```{r}
+
+# Calculate Median ABV
+median_abv_state = aggregate(impute_data[, 8], list(impute_data$State), median)
+
+# Plot Median ABV by State
 median_abv_state %>% ggplot() + geom_bar(aes(Group.1, x), fill="steelblue", stat = 'identity') +
     labs(x='', y="ABV Value", title='ABV by State') + theme_economist()+ 
   theme(axis.text.x = element_text(angle = 60, hjust = 1, size = 6 ))
 
 ```
 
+Delaware and West Virginia are by far leading on the IBU and New Hampshire among the lowest. 
+
+In terms of alcohol content West Virginia is leading again which gives an impression there could be a relationship between the IBU and ABV.
 
 
-The median ABV by state seems to have less variance than the medial IBU by state. 
-
-
-# Question 5 - Which state has the maximum alcoholic (ABV) beer? Which state has the most bitter (IBU) beer?
+Next we identified the states with a Beer with highest Alcohol content (ABV) and Beer with most bitterness.
 ```{r}
+
+# Question 5 - Which state has the maximum alcoholic (ABV) beer? 
+
 impute_data %>% filter(ABV==max(ABV))
+
+```
+The state with the maximum ABV in a beer is CO.  The beer is the Lee Hill Series Vol. 5 - Belgian Style Quadrupel Ale with an ABV of 0.128. 
+```{r}
+
+# Question 5 -Which state has the most bitter (IBU) beer?
+
 impute_data %>% filter(imputed_IBU==max(imputed_IBU))
 
 ```
 
 
-The state with the maximum ABV in a beer is CO.  The beer is the Lee Hill Series Vol. 5 - Belgian Style Quadrupel Ale with an ABV of 0.128. 
 The state with the maximum  IBU in a beer is OR. The beer is the Bitter Bitch Imperial IPA with an IBU of 138. 
 
 
-# Question 6 - Comment on the summary statistics and distribution of the ABV variable.
+Next, we calculated the mean, max and median of ABV across the states. Also, checked the distribution,
 ```{r}
+# Question 6 - Comment on the summary statistics and distribution of the ABV variable.
+# Calculate Summary
 summary(impute_data$ABV)
+# Histogram for Distribution
 impute_data %>% ggplot() + geom_histogram(aes(ABV), fill="steelblue") +
   labs(x='ABV Value', y="count", title='ABV Distribution') + theme_economist()
+# Boxplot for distribution
 impute_data %>% ggplot() + geom_boxplot(aes(ABV), fill="steelblue") + theme_economist()+
   labs(x='ABV Value', title='ABV Boxplot')
 ```
-
-It appears that the distribution of the ABV variable is slightly right skewed.  
-The 5 number summary goes as follow:   
-Min: 0.001  
-1st. Qu: 0.05  
-Median: 0.05600  
-Mean: 0.05968  
-3rd Qu: 0.06700  
-Max: 0.12800  
+ 
+It appears that the distribution of the ABV variable is slightly right skewed.  There appears to be outliers particularly on the left side as ABV is almost zero.   
+Min: 0.10%  , Median: 5.60%  , Mean: 5.96%  , Max: 12.80%  
 
 
-# Question 7 - Is there an apparent relationship between the bitterness of the beer and its alcoholic content? Draw a scatter plot.  Make your best judgment of a relationship and EXPLAIN your answer.
+
 ```{r}
-impute_data %>% ggplot() + geom_point(aes(x=ABV, y=imputed_IBU), color="steelblue", size = 1.5) + geom_smooth(aes(x=ABV, y=imputed_IBU),method = "lm")+ labs(x='ABV Value', y="IBU Value", title="Relation between IBU and ABV") + theme_economist() + annotate("text",x=0.12, y=135, label="R-Square: 33.67%", color="darkred", size=4)
+# Question 7 - Is there an apparent relationship between the bitterness of the beer and its alcoholic content? Draw a scatter plot.  Make your best judgment of a relationship and EXPLAIN your answer.
+
+impute_data %>% ggplot() + geom_point(aes(x=ABV, y=imputed_IBU), color="steelblue", size = 1.5) + geom_smooth(aes(x=ABV, y=imputed_IBU),method = "lm")+ labs(x='ABV Value', y="IBU Value", title="Relation between IBU and ABV") + theme_economist() + annotate("text",x=0.12, y=135, label="Correlation: 58.00%", color="darkred", size=4)
 
 cor(impute_data$ABV, impute_data$imputed_IBU, method = "pearson")
 
@@ -215,12 +261,14 @@ summary(lm1)
 ```
 
 
-From looking at the scatterplot above it seems that there is a positive relation between ABV and IBU variables. The higher the ABV the most likely the IBU will be.  Calculating the Spearman correlation we get a coeficient of 0.56 that indicates a medium-high correlation between the variables. This suggest some evidence that the more alcohol content in the beer the bitter it will be. 
+From looking at the scatterplot above it seems that there is a positive linear relation between ABV and IBU variables. As the  ABV the increases the IBU is expected to increase as well.  Correlation coeficient of 58.02% explains the variablity in IBU based on the changes in ABV. This suggest some evidence that the more alcohol content in the beer the bitter it will be which can be associated to the fact that more bitterness requires breweries to add sweetness to the beer to balance the taste and additional sugar leads to higher alcohol. Which makes it apparant that increase in IBU leads to increase in ABV and vice versa.
 
 
-# Question 8 - Budweiser would also like to investigate the difference with respect to IBU and ABV between IPAs (India Pale Ales) and other types of Ale (any beer with “Ale” in its name other than IPA).  You decide to use KNN classification to investigate this relationship.  Provide statistical evidence one way or the other. You can of course assume your audience is comfortable with percentages … KNN is very easy to understand conceptually.
+
 ```{r}
-# Crete new ipa_ale column based on regex from the beer style column
+# Question 8 - Budweiser would also like to investigate the difference with respect to IBU and ABV between IPAs (India Pale Ales) and other types of Ale (any beer with “Ale” in its name other than IPA).  You decide to use KNN classification to investigate this relationship.  Provide statistical evidence one way or the other. You can of course assume your audience is comfortable with percentages … KNN is very easy to understand conceptually.
+
+# Create new ipa_ale column based on regex from the beer style column
 
 impute_data$ipa_ale = ifelse(grepl("ipa", impute_data$Style, ignore.case = T), "ipa", 
          ifelse(grepl("ale", impute_data$Style, ignore.case = T), "ale", "Other"))
@@ -230,18 +278,20 @@ ale_ipa = impute_data %>% filter(!ipa_ale=="Other")
 
 ```
 
-To asses the relation between IBU and ABV between IPA and Ales we will first need to create a column with classifies the beers between "ale", "ipa", and "other". We will then filter out the "other" variable to from the dataset. This will result in a dataset containing only "ale" and "ipa" labels.  
+To assess the relation between IBU and ABV between IPA and Ales we will first need to create a variable with classifies the beers between "Ale", "IPA", and "other". We will then filter out the "other" variable from the dataset. This will result in a dataset containing only "ALE" and "IPA" labels.  
 
 ```{r}
 
 #Choose the best K
 set.seed(12)
 splitPerc = .70
+
+# Split the dataset into train and test
 trainIndices = sample(1:dim(ale_ipa)[1],round(splitPerc * dim(ale_ipa)[1]))
 train = ale_ipa[trainIndices,]
 test = ale_ipa[-trainIndices,]
 
-
+# Run iterations to find the best K
 iterations = 50
 accs = data.frame(accuracy = numeric(iterations), k = numeric(iterations))
 
@@ -256,16 +306,18 @@ for(i in 1:iterations)
   accs$k[i] = i
 }
 
-plot(accs$k,accs$accuracy, type = "l", xlab = "k")
-axis(side=1, at=c(0:50, 5))
+# Plot the K values with accuracy variation
+
+plot(accs$k,accs$accuracy, type = "l", xlab = "Value of k", ylab = "Accuracy Percentage")
+axis(side = 2, at = c(0:50, 5))
 box()
 
 
 ```
 
-Run 50 iterations of the knn classier to choose the K with the highest accuracy classifying betweemn "ale" and "ipa". It appears that the best K its 5. We will just this K to run different train/test splits. 
+We ran 50 iterations of the knn (K nearest neighbors) classier to choose the K with the highest accuracy classifying betweemn "Ale" and "IPA". It appears that the best vlaue K with highest accuracy is 5. We will use K = 5 to run different train/test splits. 
 
-
+The Accuracy, specificity and sensitivity measures are quite high for K=5.
 ```{r}
 # Run 1000 iterations  on different train/test sets. We will compute the average accuracy, specificity and Sensitivity.
 iterations = 1000
@@ -317,7 +369,7 @@ fit = knn(train[,c(8,10)], test[,c(8,10)],train$ipa_ale,k=5)
 # Create a dataframe to simplify charting
 plot.df = data.frame(test, predicted = fit)
 plot.df$ipa_ale = as.factor(plot.df$ipa_ale)
-plot.df
+
 
 # First use Convex hull to determine boundary points of each cluster
 plot.df1 = data.frame(x = plot.df$imputed_IBU, 
@@ -328,22 +380,18 @@ find_hull = function(df) df[chull(df$x, df$y), ]
 boundary = ddply(plot.df1, .variables = "predicted", .fun = find_hull)
 
 ggplot(plot.df, aes(imputed_IBU, ABV, color = predicted, fill = predicted)) + 
-  geom_point(size = 2) +   geom_polygon(data = boundary, aes(x,y), alpha = 0.5) + ggtitle("KNN Clusters Prediction Boundery") + theme_economist()
+  geom_point(size = 2) +   geom_polygon(data = boundary, aes(x,y), alpha = 0.5) + ggtitle("KNN Clusters Prediction Boundaries") + theme_economist() + xlab("IBU")
 
 # plot source: https://stackoverflow.com/questions/35402850/how-to-plot-knn-clusters-boundaries-in-r
 ```
 
-We run 1,000 iterations of different train/test splits with k=5 to get the average accuracy, sensitivity and specificity. 
+From the above plots its evident that ABV and IBU are correlated and varies significatly for IPA and ALEs. We can see a clear trend that the higher value of IBU is associated to IPAs while smaller values of IBU associated to ALEs. There is middle ground where IPAs and ALEs both overlap for the same level of IBUs and ABV but that area is comparitively small. There is a clear distinction between ALE and IPAs based on the IBU and ABV values.
 
-Mean Accuracy: 0.9048203  
-Mean Specificity:0.8699283  
-Mean Sensitivity: 0.9247805  
 
-Base on these results, it appears that the variables ABV and IBU are highly related with the Ale and IPA style beers. 
-
+ 
+```{r}
 
 # Question 9 - Knock their socks off!  Find one other useful inference from the data that you feel Budweiser may be able to find value in.  You must convince them why it is important and back up your conviction with appropriate statistical evidence. 
-```{r}
 #
 library(wordcloud)
 #install.packages("RColorBrewer")
@@ -397,6 +445,7 @@ t.test(ale_ipa$imputed_IBU ~ale_ipa$ipa_ale)
 t.test(ale_ipa$ABV ~ale_ipa$ipa_ale)
 
 ```
+Top 5 states in terms of beer consumption are California, Texas, Florida, New York and Pennsylvania. refer to the report published at https://vinepair.com/articles/map-states-drink-beer-america-2020/
 
 ```{r}
 
