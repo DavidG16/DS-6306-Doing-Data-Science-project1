@@ -51,7 +51,7 @@ breweries_per_state %>% ggplot() + geom_bar(aes(State, n), fill="steelblue" ,sta
 
 ```
 
-Below is the Heatmap with same data with different visualization.
+Below is the Heat-map with same data with different visualization.
 ```{r}
 # Building Heatmap of US for number of breweries in each state
 breweries_per_state_1 = breweries_per_state
@@ -82,11 +82,11 @@ ggplot(map.df, aes(x=long,y=lat,group=group))+
   geom_path()+ 
   scale_fill_gradientn(colours=rev(heat.colors(5)), na.value="grey90") + ggtitle("Breweries by State")+theme_map()
 ```
-This heatmap helps to easily identify which states are the ones with the most breweries. 
+This heat-map helps to easily identify which states are the ones with the most breweries. 
 The two states with the most breweries are California and Colorado, with 39 and 47 breweries respectively. 
 
 
-Now, we will merge the two datasets. Snippet of merged data is provided below. This merge results in a dataframe of 2410 rows.
+Now, we will merge the two data sets. Snippet of merged data is provided below. This merge results in a data-frame of 2410 rows.
 ```{r}
 # Question 2 - Merge beer data with the breweries data 
 data = merge(x=breweries, y=beers, by.y ="Brewery_id" , by.x = "Brew_ID")
@@ -97,7 +97,7 @@ head(data,6)
 tail(data,6)
 ```
  
-With the merged data, we first needs to check-out if there are any missing values. After data evaluation, we identified that there are only two vaiables with missing data. ABV is missing 62 values while IBU is missing 1005 rows.Since its a large number of missing values we need to identify a way to impute the missing values.  
+With the merged data, we first needs to check-out if there are any missing values. After data evaluation, we identified that there are only two variables with missing data. ABV is missing 62 values while IBU is missing 1005 rows.Since its a large number of missing values we need to identify a way to impute the missing values.  
 ```{r}
 # Questions 3 - Handle missing values
 missing.values <- data %>%
@@ -218,7 +218,7 @@ Next we identified the states with a Beer with highest Alcohol content (ABV) and
 impute_data %>% filter(ABV==max(ABV))
 
 ```
-The state with the maximum ABV in a beer is CO.  The beer is the Lee Hill Series Vol. 5 - Belgian Style Quadrupel Ale with an ABV of 0.128. 
+The state with the maximum ABV in a beer is CO.  The beer is the Lee Hill Series Vol. 5 - Belgian Style Quadruple Ale with an ABV of 0.128. 
 ```{r}
 
 # Question 5 -Which state has the most bitter (IBU) beer?
@@ -261,7 +261,7 @@ summary(lm1)
 ```
 
 
-From looking at the scatterplot above it seems that there is a positive linear relation between ABV and IBU variables. As the  ABV the increases the IBU is expected to increase as well.  Correlation coeficient of 58.02% explains the variablity in IBU based on the changes in ABV. This suggest some evidence that the more alcohol content in the beer the bitter it will be which can be associated to the fact that more bitterness requires breweries to add sweetness to the beer to balance the taste and additional sugar leads to higher alcohol. Which makes it apparant that increase in IBU leads to increase in ABV and vice versa.
+From looking at the scatter-plot above it seems that there is a positive linear relation between ABV and IBU variables. As the  ABV the increases the IBU is expected to increase as well.  Correlation coefficient of 58.02% explains the variability in IBU based on the changes in ABV. This suggest some evidence that the more alcohol content in the beer the bitter it will be which can be associated to the fact that more bitterness requires breweries to add sweetness to the beer to balance the taste and additional sugar leads to higher alcohol. Which makes it apparent that increase in IBU leads to increase in ABV and vice versa.
 
 
 
@@ -278,7 +278,7 @@ ale_ipa = impute_data %>% filter(!ipa_ale=="Other")
 
 ```
 
-To assess the relation between IBU and ABV between IPA and Ales we will first need to create a variable with classifies the beers between "Ale", "IPA", and "other". We will then filter out the "other" variable from the dataset. This will result in a dataset containing only "ALE" and "IPA" labels.  
+To assess the relation between IBU and ABV between IPA and Ales we will first need to create a variable with classifies the beers between "Ale", "IPA", and "other". We will then filter out the "other" variable from the data set. This will result in a data set containing only "ALE" and "IPA" labels.  
 
 ```{r}
 
@@ -315,7 +315,7 @@ box()
 
 ```
 
-We ran 50 iterations of the knn (K nearest neighbors) classier to choose the K with the highest accuracy classifying betweemn "Ale" and "IPA". It appears that the best vlaue K with highest accuracy is 5. We will use K = 5 to run different train/test splits. 
+We ran 50 iterations of the K-NN (K nearest neighbors) classier to choose the K with the highest accuracy classifying between "Ale" and "IPA". It appears that the best value K with highest accuracy is 5. We will use K = 5 to run different train/test splits. 
 
 The Accuracy, specificity and sensitivity measures are quite high for K=5.
 ```{r}
@@ -385,7 +385,7 @@ ggplot(plot.df, aes(imputed_IBU, ABV, color = predicted, fill = predicted)) +
 # plot source: https://stackoverflow.com/questions/35402850/how-to-plot-knn-clusters-boundaries-in-r
 ```
 
-From the above plots its evident that ABV and IBU are correlated and varies significatly for IPA and ALEs. We can see a clear trend that the higher value of IBU is associated to IPAs while smaller values of IBU associated to ALEs. There is middle ground where IPAs and ALEs both overlap for the same level of IBUs and ABV but that area is comparitively small. There is a clear distinction between ALE and IPAs based on the IBU and ABV values.
+From the above plots its evident that ABV and IBU are correlated and varies significantly for IPA and ALEs. We can see a clear trend that the higher value of IBU is associated to IPAs while smaller values of IBU associated to ALEs. There is middle ground where IPAs and ALEs both overlap for the same level of IBUs and ABV but that area is comparatively small. There is a clear distinction between ALE and IPAs based on the IBU and ABV values.
 
 
 Since, we know that IPAs and ALEs are clearly different and have different properties. We took our analysis to the next step. We checked the most popular words among the Beer Styles and among Beer Names.
@@ -470,9 +470,9 @@ t.test(ale_ipa$ABV ~ale_ipa$ipa_ale)
 ```
 Two sample t-test confirms that the mean of IBU and ABV is different for ALE from IPA. This confirms our earlier inference from the KNN test.
 
-Powered with this information, we tried to focus on the top 5 states in the US interms of consumption of beer. 
+Powered with this information, we tried to focus on the top 5 states in the US in terms of consumption of beer. 
 
-The top 5 states in terms of beer consumption are California, Texas, Florida, New York and Pennsylvania. refering to the report published at https://vinepair.com/articles/map-states-drink-beer-america-2020/
+The top 5 states in terms of beer consumption are California, Texas, Florida, New York and Pennsylvania. referring to the report published at https://vinepair.com/articles/map-states-drink-beer-america-2020/
 
 ```{r}
 
@@ -498,7 +498,7 @@ beers_state_top_5= beers_state %>% filter(State == " CA" | State== " TX" | State
 
 # Step 3-  Plot # of beers that are ale or ipa per state
 beers_state_tall = beers_state_top_5 %>% gather(key= Beers, value=Value, ALE:IPA)
-beers_state_tall %>% ggplot(aes(State, Value, fill=Beers), ) + geom_col(position="dodge") + theme_economist() + ggtitle("Beer Type for The Top 5 States (Consupmtion)")
+beers_state_tall %>% ggplot(aes(State, Value, fill=Beers), ) + geom_col(position="dodge") + theme_economist() + ggtitle("Beer Type for The Top 5 States (Consumption)")
 
 
 ```
@@ -509,4 +509,4 @@ https://www.census.gov/newsroom/press-releases/2019/popest-nation.html
 
 In terms of Beer consumption Texas is at number 2 (as mentioned above). Considering the growth in population and the beer consumption in Texas. We recommend to come up with New Beer(s) in the state of Texas.
 
-Considering there is a huge demand for IPA and Texas has lot less IPAs compared to ALEs as shown the plot above. Since American, IPAs are most popular beer styles, we recommend Americal Pale Ale (APA) or Indian Pale Ale(IPA) for Texas market. 
+Considering there is a huge demand for IPA and Texas has lot less IPAs compared to ALEs as shown the plot above. Since American, IPAs are most popular beer styles, we recommend American Pale Ale (APA) or Indian Pale Ale(IPA) for Texas market. 
