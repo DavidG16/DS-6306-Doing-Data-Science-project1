@@ -52,6 +52,7 @@ breweries_per_state %>% ggplot() + geom_bar(aes(State, n), fill="steelblue" ,sta
 ```
 
 Below is the Heat-map with same data with different visualization.
+
 ```{r}
 # Building Heatmap of US for number of breweries in each state
 breweries_per_state_1 = breweries_per_state
@@ -87,6 +88,7 @@ The two states with the most breweries are California and Colorado, with 39 and 
 
 
 Now, we will merge the two data sets. Snippet of merged data is provided below. This merge results in a data-frame of 2410 rows.
+
 ```{r}
 # Question 2 - Merge beer data with the breweries data 
 data = merge(x=breweries, y=beers, by.y ="Brewery_id" , by.x = "Brew_ID")
@@ -117,6 +119,7 @@ missing.values %>% ggplot() + geom_bar(aes(x=key, y=num.missing), fill="steelblu
 ```
 
 Next we plot IBU and ABV distribution. 
+
 ```{r}
 # Questions 3 - Handle missing values
 
@@ -177,7 +180,8 @@ There were also 5 beers with a missing style. We decided to drop those records.
 
 Next, we computed the median Alcohol content (ABV) and median Bitterness (IBU) fir each state.
 
-Median IBU by state
+Median IBU by state:
+
 ```{r}
 # Question 4 - Compute the median alcohol content and international bitterness unit for each state. Plot a bar chart to compare.
 
@@ -192,7 +196,9 @@ median_ibu_state %>% ggplot() + geom_bar(aes(Group.1, x),fill="steelblue", stat 
 
 
 ```
-Median ABV by State
+
+Median ABV by State:
+
 ```{r}
 
 # Calculate Median ABV
@@ -317,7 +323,8 @@ box()
 
 We ran 50 iterations of the K-NN (K nearest neighbors) classier to choose the K with the highest accuracy classifying between "Ale" and "IPA". It appears that the best value K with highest accuracy is 5. We will use K = 5 to run different train/test splits. 
 
-The Accuracy, specificity and sensitivity measures are quite high for K=5.
+The Accuracy, specificity and sensitivity measures are quite high for K=5. Accuracy is at 90%.
+
 ```{r}
 # Run 1000 iterations  on different train/test sets. We will compute the average accuracy, specificity and Sensitivity.
 iterations = 1000
@@ -393,11 +400,11 @@ Since, we know that IPAs and ALEs are clearly different and have different prope
 # Question 9 - Knock their socks off!  Find one other useful inference from the data that you feel Budweiser may be able to find value in.  You must convince them why it is important and back up your conviction with appropriate statistical evidence. 
 
 library(wordcloud)
-install.packages("RColorBrewer")
+#install.packages("RColorBrewer")
 library(RColorBrewer)
-install.packages("wordcloud2")
+#install.packages("wordcloud2")
 library(wordcloud2)
-install.packages("tm")
+#install.packages("tm")
 library(tm)
 
 # Set Beer Style as Vector
@@ -446,22 +453,25 @@ df_name = data.frame(word = names(words),freq=words)
 ```
 
 Word Cloud - Beer Styles
+
 ```{r}
 # Create the Word cloud of Beer Style
 wordcloud(words = df_style$word, freq = df_style$freq, min.freq = 1,max.words=100, random.order=FALSE, rot.per=0.35,colors=brewer.pal(8, "Dark2"))
 ```
+
 Word Cloud - Beer Names
+
 ```{r}
 # Create the Word cloud of Beer Style
 set.seed(1234) # for reproducibility 
 wordcloud(words = df_name$word, freq = df_name$freq, min.freq = 1,max.words=100, random.order=FALSE, rot.per=0.35,colors=brewer.pal(6, "Dark2"))
 ```
+
 We notice the most popular words are American, IPA and ALE.
 
 Now we will run another test to check if the IPA and ALE have different Mean for IBUs and ABV.
 
 ```{r}
-ale_ipa
 ale_ipa$ipa_ale = as.factor(ale_ipa$ipa_ale)
 t.test(ale_ipa$imputed_IBU ~ale_ipa$ipa_ale)
 t.test(ale_ipa$ABV ~ale_ipa$ipa_ale)
