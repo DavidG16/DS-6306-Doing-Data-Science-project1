@@ -388,55 +388,78 @@ ggplot(plot.df, aes(imputed_IBU, ABV, color = predicted, fill = predicted)) +
 From the above plots its evident that ABV and IBU are correlated and varies significatly for IPA and ALEs. We can see a clear trend that the higher value of IBU is associated to IPAs while smaller values of IBU associated to ALEs. There is middle ground where IPAs and ALEs both overlap for the same level of IBUs and ABV but that area is comparitively small. There is a clear distinction between ALE and IPAs based on the IBU and ABV values.
 
 
- 
+Since, we know that IPAs and ALEs are clearly different and have different properties. We took our analysis to the next step. We checked the most popular words among the Beer Styles and among Beer Names.
 ```{r}
 
 # Question 9 - Knock their socks off!  Find one other useful inference from the data that you feel Budweiser may be able to find value in.  You must convince them why it is important and back up your conviction with appropriate statistical evidence. 
 #
 library(wordcloud)
-#install.packages("RColorBrewer")
+install.packages("RColorBrewer")
 library(RColorBrewer)
-#install.packages("wordcloud2")
+install.packages("wordcloud2")
 library(wordcloud2)
-#install.packages("tm")
+install.packages("tm")
 library(tm)
+
+# Set Beer Style as Vector
 text = as.vector(impute_data['Style'])
 docs = Corpus(VectorSource(text))
+
+# Remove punctuations, whitespaces and numbers
 docs = docs %>%
   tm_map(removeNumbers) %>%
   tm_map(removePunctuation) %>%
   tm_map(stripWhitespace)
+
+# Move to lower case
 docs = tm_map(docs, content_transformer(tolower))
+
+# Ignore Stop Words
 docs = tm_map(docs, removeWords, stopwords("english"))
 tdm = TermDocumentMatrix(docs) 
 matrix = as.matrix(tdm) 
 words = sort(rowSums(matrix),decreasing=TRUE) 
+
+# Make a dataframe
 df_style = data.frame(word = names(words),freq=words)
 
-
+# Set Beer Name as Vector
 text = as.vector(impute_data$Beer.Name)
 docs = Corpus(VectorSource(text))
+
+# Remove punctuations, whitespaces and numbers
 docs = docs %>%
   tm_map(removeNumbers) %>%
   tm_map(removePunctuation) %>%
   tm_map(stripWhitespace)
 docs = tm_map(docs, content_transformer(tolower))
+
+# Ignore Stop Words
 docs = tm_map(docs, removeWords, stopwords("english"))
 tdm = TermDocumentMatrix(docs) 
+
 matrix = as.matrix(tdm) 
 words = sort(rowSums(matrix),decreasing=TRUE) 
+
+# Make a dataframe
 df_name = data.frame(word = names(words),freq=words)
 
 ```
 
+Word Cloud - Beer Styles
 ```{r}
+# Create the Word cloud of Beer Style
 wordcloud(words = df_style$word, freq = df_style$freq, min.freq = 1,max.words=100, random.order=FALSE, rot.per=0.35,colors=brewer.pal(8, "Dark2"))
 ```
-
+Word Cloud - Beer Names
 ```{r}
+# Create the Word cloud of Beer Style
 set.seed(1234) # for reproducibility 
 wordcloud(words = df_name$word, freq = df_name$freq, min.freq = 1,max.words=100, random.order=FALSE, rot.per=0.35,colors=brewer.pal(6, "Dark2"))
 ```
+We notice the most popular words are American, IPA and ALE.
+
+Now we will run another test to check if the IPA and ALE have different Mean for IBUs and ABV.
 
 ```{r}
 ale_ipa
@@ -445,31 +468,45 @@ t.test(ale_ipa$imputed_IBU ~ale_ipa$ipa_ale)
 t.test(ale_ipa$ABV ~ale_ipa$ipa_ale)
 
 ```
-Top 5 states in terms of beer consumption are California, Texas, Florida, New York and Pennsylvania. refer to the report published at https://vinepair.com/articles/map-states-drink-beer-america-2020/
+Two sample t-test confirms that the mean of IBU and ABV is different for ALE from IPA. This confirms our earlier inference from the KNN test.
+
+Powered with this information, we tried to focus on the top 5 states in the US interms of consumption of beer. 
+
+The top 5 states in terms of beer consumption are California, Texas, Florida, New York and Pennsylvania. refering to the report published at https://vinepair.com/articles/map-states-drink-beer-america-2020/
 
 ```{r}
 
+# Seperate ALE
 ale = impute_data %>% filter(ipa_ale=="ale")
-ipa = impute_data %>% filter(ipa_ale=="ipa")
-#ale
 
-# Step 1 -  group by state 
+# Seperate IPA
+ipa = impute_data %>% filter(ipa_ale=="ipa")
+
+
+# Step 1 -  group by state and count the number of beer in each state IPA and ALE 
 ipa_state =ipa %>% count(State)
 ale_state =ale %>% count(State)
 ale_state  = ale_state %>% rename(ALE = n)
 ipa_state  = ipa_state %>% rename(IPA = n)
+
+# Merge the Data Frame
 beers_state = merge(ale_state, ipa_state, by="State")
-beers_state
+
+
+# Step 2-  Filter for the top 5 states for Beer Consumption
 beers_state_top_5= beers_state %>% filter(State == " CA" | State== " TX" | State== " FL" | State== " NY" | State== " PA")
-beers_state_top_5
-# Step 2-  Find # of beers that are ale or ipa per state
+
+# Step 3-  Plot # of beers that are ale or ipa per state
 beers_state_tall = beers_state_top_5 %>% gather(key= Beers, value=Value, ALE:IPA)
 beers_state_tall %>% ggplot(aes(State, Value, fill=Beers), ) + geom_col(position="dodge") + theme_economist() + ggtitle("Beer Type for The Top 5 States (Consupmtion)")
 
-# Step 3 - Find the states that have the lowest number of ales 
-
-# Step 4 - Find states that have have enough breweries and not enough ale beers, make recommendation of  
-# to launch a ale style beer in this state
-# We choose Texas, its number 2 in consumption and population is growing 
 
 ```
+
+
+Based on the US census report. Texas is adding more population every year than any other state in the USA.
+https://www.census.gov/newsroom/press-releases/2019/popest-nation.html
+
+In terms of Beer consumption Texas is at number 2 (as mentioned above). Considering the growth in population and the beer consumption in Texas. We recommend to come up with New Beer(s) in the state of Texas.
+
+Considering there is a huge demand for IPA and Texas has lot less IPAs compared to ALEs as shown the plot above. Since American, IPAs are most popular beer styles, we recommend Americal Pale Ale (APA) or Indian Pale Ale(IPA) for Texas market. 
