@@ -3,6 +3,7 @@ title: "Beer and Breweries Case Study"
 author: "David Grijalva and Apurv Mittal"
 date: "10/5/2020"
 output:
+  pdf_document: default
   html_document: default
 ---
 
