@@ -83,7 +83,8 @@ ggplot(map.df, aes(x=long,y=lat,group=group))+
   geom_path()+ 
   scale_fill_gradientn(colours=rev(heat.colors(5)), na.value="grey90") + ggtitle("Breweries by State")+theme_map()
 ```
-This heat-map helps to easily identify which states are the ones with the most breweries. 
+
+Heat-map helps to easily identify which states are the ones with the most breweries. 
 The two states with the most breweries are California and Colorado, with 39 and 47 breweries respectively. 
 
 
@@ -314,16 +315,16 @@ for(i in 1:iterations)
 
 # Plot the K values with accuracy variation
 
-plot(accs$k,accs$accuracy, type = "l", xlab = "Value of k", ylab = "Accuracy Percentage")
+plot(accs$k,accs$accuracy, type = "l", xlab = "Value of k", ylab = "Accuracy Percentage", main = "Best Value of K")
 axis(side = 2, at = c(0:50, 5))
 box()
 
 
 ```
 
-We ran 50 iterations of the K-NN (K nearest neighbors) classier to choose the K with the highest accuracy classifying between "Ale" and "IPA". It appears that the best value K with highest accuracy is 5. We will use K = 5 to run different train/test splits. 
+We ran 50 iterations of the K-NN (K nearest neighbors) classier to choose the K with the highest accuracy classifying between "ALE" and "IPA". It appears that the best value K with highest accuracy is 5. We will use K = 5 to run different train/test splits. 
 
-The Accuracy, specificity and sensitivity measures are quite high for K=5. Accuracy is at 90%.
+The Accuracy, specificity and sensitivity measures are quite high for K=5. Accuracy is at 90%.Specificity and Sensitivity at 87.0% and 92.0% respectively.
 
 ```{r}
 # Run 1000 iterations  on different train/test sets. We will compute the average accuracy, specificity and Sensitivity.
@@ -516,6 +517,6 @@ beers_state_tall %>% ggplot(aes(State, Value, fill=Beers), ) + geom_col(position
 Based on the US census report. Texas is adding more population every year than any other state in the USA.
 https://www.census.gov/newsroom/press-releases/2019/popest-nation.html
 
-In terms of Beer consumption Texas is at number 2 (as mentioned above). Considering the growth in population and the beer consumption in Texas. We recommend to come up with New Beer(s) in the state of Texas.
+In terms of Beer consumption Texas is at number 2 (as mentioned above). Considering the growth in population and the beer consumption in Texas. We recommend to launch new beer(s) in the state of Texas.
 
 Considering there is a huge demand for IPA and Texas has lot less IPAs compared to ALEs as shown the plot above. Since American, IPAs are most popular beer styles, we recommend American Pale Ale (APA) or Indian Pale Ale(IPA) for Texas market. 
