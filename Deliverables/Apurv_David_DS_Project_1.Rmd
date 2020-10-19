@@ -3,7 +3,6 @@ title: "Beer and Breweries Case Study"
 author: "David Grijalva and Apurv Mittal"
 date: "10/5/2020"
 output:
-  pdf_document: default
   html_document: default
 ---
 
@@ -35,8 +34,8 @@ We have evaluated the data of the Breweries across USA and various different pop
 
 ```{r}
 # Load the CSVs
-breweries = read.csv("./Breweries.csv")
-beers = read.csv("./Beers.csv")
+breweries = read.csv("./Data/Breweries.csv")
+beers = read.csv("./Data/Beers.csv")
 
 ```
 
@@ -260,7 +259,7 @@ Min: 0.10%  , Median: 5.60%  , Mean: 5.96%  , Max: 12.80%
 ```{r}
 # Question 7 - Is there an apparent relationship between the bitterness of the beer and its alcoholic content? Draw a scatter plot.  Make your best judgment of a relationship and EXPLAIN your answer.
 
-impute_data %>% ggplot() + geom_point(aes(x=ABV, y=imputed_IBU), color="steelblue", size = 1.5) + geom_smooth(aes(x=ABV, y=imputed_IBU),method = "lm")+ labs(x='ABV Value', y="IBU Value", title="Relation between IBU and ABV") + theme_economist() + annotate("text",x=0.12, y=135, label="Correlation: 58.00%", color="darkred", size=4)
+impute_data %>% ggplot() + geom_point(aes(x=ABV, y=imputed_IBU), color="steelblue", size = 1.5) + geom_smooth(aes(x=ABV, y=imputed_IBU),method = "lm")+ labs(x='ABV Value', y="IBU Value", title="Relation between IBU and ABV") + theme_economist() + annotate("text",x=0.12, y=135, label="Correlation: 58%", color="darkred", size=4)
 
 cor(impute_data$ABV, impute_data$imputed_IBU, method = "pearson")
 
