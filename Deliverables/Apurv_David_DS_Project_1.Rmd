@@ -34,8 +34,8 @@ We have evaluated the data of the Breweries across USA and various different pop
 
 ```{r}
 # Load the CSVs
-breweries = read.csv("./Data/Breweries.csv")
-beers = read.csv("./Data/Beers.csv")
+breweries = read.csv("../Data/Breweries.csv")
+beers = read.csv("../Data/Beers.csv")
 
 ```
 
