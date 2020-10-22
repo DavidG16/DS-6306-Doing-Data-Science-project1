@@ -7,8 +7,8 @@ Apurv Mittal
 ## Project Description	
 The project entails a EDA for a beer and breweries dataset.  
 
-## Videos links
-David - https://www.youtube.com/watch?v=UuRlddgWVJA&feature=youtu.be
+## Videos links  
+David - https://www.youtube.com/watch?v=UuRlddgWVJA&feature=youtu.be  
 Apurv - https://www.youtube.com/watch?v=G7bpVELEXts&feature=youtu.be
 
 
